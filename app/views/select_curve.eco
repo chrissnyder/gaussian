@@ -1,0 +1,6 @@
+<select name="curves" class="curve_selector">
+  <option>Select a Curve</option>
+  <% for curve in @options: %>
+    <%- curve %>
+  <% end %>
+</select>

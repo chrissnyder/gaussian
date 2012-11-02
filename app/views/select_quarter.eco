@@ -1,0 +1,6 @@
+<select name="quarters" class="quarter_selector">
+  <option>Select a Curve</option>
+  <% for quarter in @quarters: %>
+    <%- quarter %>
+  <% end %>
+</select>
