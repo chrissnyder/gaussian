@@ -1,0 +1,321 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <title>Fit PH Lightcurve Data</title>
+
+    <script type="text/javascript" src="../../d3.v2.min.js"></script>
+    <script type="text/javascript" src="../../sylvester-min.js"></script>
+    <script type="text/javascript" src="../../optimize.js"></script>
+
+    <script src="/application.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      var jQuery  = require("jqueryify");
+      var exports = this;
+      jQuery(function(){
+        var App = require("index");
+        exports.app = new App({el: $("body")});
+      });
+    </script>
+
+    <style type="text/css">
+
+        body {
+            background: #fff;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-weight: 300;
+            color: #222;
+        }
+
+        a {
+            text-decoration: none;
+            color: #111;
+        }
+
+        h1 {
+            font-weight: normal;
+            font-size: 30px;
+        }
+
+        h1 small {
+            font-weight: 200;
+            font-size: 22px;
+            color: #333;
+        }
+
+        p {
+            color: #444;
+        }
+
+        .header:before,
+        .header:after {
+            display: table;
+            content: "";
+        }
+
+        .header:after {
+            clear: both;
+        }
+
+        .header .top-left {
+            float: left;
+        }
+
+        .header .top-right {
+            float: right;
+        }
+
+        .legend {
+            text-align: center;
+        }
+
+        .data {
+            color: #111;
+        }
+
+        .truth {
+            color: #f89406;
+        }
+
+        .fit {
+            color: #049cdb;
+        }
+
+        .btn {
+            font-size: 24px;
+            background-color: #333;
+            color: #eee;
+            padding: 3px 10px 5px;
+            min-width: 20px;
+            display: inline-block;
+            text-align: center;
+            margin: 0 5px;
+
+            -webkit-border-radius: 5px;
+               -moz-border-radius: 5px;
+                    border-radius: 5px;
+        }
+
+        .comp-btn {
+            font-weight: bold;
+        }
+
+        #order {
+            font-size: 20px;
+            font-weight: bold;
+            color: #111;
+        }
+
+        #container {
+            width: 800px;
+            margin: 0 auto;
+        }
+
+        #container circle {
+            fill: #222;
+            stroke: #222;
+            opacity: 1;
+        }
+
+        #container g {
+            stroke: #000;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div id="container">
+    <h1>
+        <a href="https://github.com/dfm/optimize.js">Gassuian Fits</a>
+        <small>| For PH Data</small>
+    </h1>
+
+    <div class="options"></div>
+
+    <div class="header">
+        <div class="top-left">
+            <a href="javascript:regenerate();" class="btn">New Dataset</a>
+            <a href="javascript:do_fit();" class="btn">Fit</a>
+        </div>
+        <div class="top-right">
+            Continuum complexity:
+            <a href="javascript:window.order--;do_fit();" class="btn comp-btn">-</a>
+            <span id="order">0</span>
+            <a href="javascript:window.order++;do_fit();" class="btn comp-btn">+</a>
+        </div>
+    </div>
+</div>
+
+<div class="legend">
+    <span class="data">Data</span> |
+    <span class="truth">Truth</span> |
+    <span class="fit">Fit</span>
+</div>
+
+<script type="text/javascript" charset="utf-8">
+
+var i, x, truth, model = function (a, x) {
+    var i, j, result = [], sig2 = a[1] * a[1], norm;
+    norm = a[0] / Math.sqrt(2 * Math.PI * sig2);
+
+    x = optimize.vector.atleast_1d(x);
+    a = optimize.vector.atleast_1d(a);
+
+    for (i = 0; i < x.length; i++) {
+        var diff = x[i] - a[2];
+        result.push(norm * Math.exp(-0.5 * diff * diff / sig2));
+    }
+
+    for (j = 3; j < a.length; j++) {
+        for (i = 0; i < x.length; i++) {
+            result[i] += a[j] * Math.pow(x[i], j - 3);
+        }
+    }
+
+    return result;
+};
+
+// Generating some fake data.
+xrange = [-1, 1];
+data = [];
+true_data = [];
+noise = 0.2;
+
+var generate_data = function () {
+    truth = [-2 * Math.random(), 0.1 + 0.01 * Math.random(),
+          0.2 * ((xrange[1] - xrange[0]) * Math.random() + xrange[0]),
+          5 * Math.random() - 2.5, 3 * Math.random() - 1.5,
+          Math.random() - 0.5, Math.random() - 0.5];
+    data = [];
+    true_data = [];
+    for (i = 0; i < 200; i++) {
+        var x0 = (xrange[1] - xrange[0]) * Math.random() + xrange[0];
+        data.push({x: x0, y: model(truth, x0)[0] + noise * window.randomNormal()});
+    }
+
+    for (i = xrange[0]; i <= xrange[1]; i += (xrange[1] - xrange[0]) / 500.) {
+        true_data.push({x: i, y: model(truth, i)[0]});
+    }
+
+    x_scale = d3.scale.linear().range([0, 800]).domain(xrange);
+    y_scale = d3.scale.linear().range([500, 0])
+        .domain([d3.min(data, function (d) { return d.y - noise; }) - 0.5,
+                d3.max(data, function (d) { return d.y + noise; }) + 0.5]);
+};
+generate_data();
+
+// Truth line.
+
+console.log(data);
+
+var svg = d3.select("#container").append("svg:svg")
+        .attr("width", 800)
+        .attr("height", 500)
+        .append("svg:g");
+
+var line = d3.svg.line()
+        .x(function(d) { return x_scale(d.x); })
+        .y(function(d) { return y_scale(d.y); });
+
+var true_line = svg.append("svg:path")
+        .attr("d", line(true_data))
+        .attr("stroke-width", 5.0)
+        .attr("stroke", "#f89406")
+        .attr("fill", "transparent")
+        .attr("opacity", 0.7);
+
+// Fit the line.
+var fit_line = svg.append("svg:path")
+        .attr("stroke-width", 3.0)
+        .attr("stroke", "#049cdb")
+        .attr("fill", "transparent")
+        .attr("opacity", 1.0);
+
+var datapoints = svg.selectAll("circle")
+        .data(data)
+    .enter().append("circle")
+        .attr("cx", function(d) { return x_scale(d.x); })
+        .attr("cy", function(d) { return y_scale(d.y); })
+        .attr("r", 4);
+
+var errorbars = svg.selectAll("line")
+        .data(data)
+    .enter().append("line")
+        .attr("x1", function (d) { return x_scale(d.x); })
+        .attr("x2", function (d) { return x_scale(d.x); })
+        .attr("y1", function (d) { return y_scale(d.y - noise); })
+        .attr("y2", function (d) { return y_scale(d.y + noise); })
+        .attr("stroke", "black")
+        .attr("stroke-width", 2.0);
+
+var draw_fit = function (p) {
+    var fit_data = [];
+    for (i = xrange[0]; i <= xrange[1]; i += (xrange[1] - xrange[0]) / 500.) {
+        fit_data.push({x: i, y: model(p, i)[0]});
+    }
+    fit_line.transition().attr("d", line(fit_data));
+};
+
+var do_fit = function () {
+    var i, p0 = [-5, 0.1, 0.1, d3.median(data, function (d) { return d.y; })], p1, chi;
+    var order = window.order;
+    if (order < 0) {
+        window.order = 0;
+        order = 0;
+    }
+    $("#order").text(window.order);
+
+    for (i = 1; i <= order; i++) {
+        p0.push(0.0);
+    }
+    chi = function (p) {
+        var i, chi = [];
+        if (Math.abs(p[1]) > (xrange[1] - xrange[0]) ||
+                p[2] > xrange[1] || p[2] < xrange[0]) {
+            for (i = 0; i < data.length; i++) {
+                chi.push(1e10);
+            }
+        }
+        for (i = 0; i < data.length; i++) {
+            chi.push((data[i].y - model(p, data[i].x)[0]) / noise);
+        }
+        console.log('chi', chi);
+        return chi;
+    };
+    chi2 = function (p) {
+        var c = chi(p);
+        return optimize.vector.dot(c, c);
+    };
+    // p1 = optimize.newton(chi, p0);
+    p1 = optimize.fmin(chi2, p0);
+    console.log(p1);
+    draw_fit(p1);
+};
+
+var regenerate = function () {
+    generate_data();
+    datapoints.transition()
+            .duration(750)
+            .attr("cx", function(d, i) { return x_scale(data[i].x); })
+            .attr("cy", function(d, i) { return y_scale(data[i].y); });
+    errorbars.transition()
+            .duration(750)
+            .attr("x1", function (d, i) { return x_scale(data[i].x); })
+            .attr("x2", function (d, i) { return x_scale(data[i].x); })
+            .attr("y1", function (d, i) { return y_scale(data[i].y - noise); })
+            .attr("y2", function (d, i) { return y_scale(data[i].y + noise); })
+    true_line.transition()
+            .duration(750)
+            .attr("d", line(true_data));
+};
+
+window.order = 0;
+do_fit();
+
+</script>
+
+</body>
+</html>

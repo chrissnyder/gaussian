@@ -1,0 +1,160 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <title>Fit PH Lightcurve Data</title>
+
+    <script type="text/javascript" src="../../d3.v2.min.js"></script>
+    <script type="text/javascript" src="../../sylvester-min.js"></script>
+    <script type="text/javascript" src="../../optimize.js"></script>
+
+    <script src="/application.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      var jQuery  = require("jqueryify");
+      var exports = this;
+      jQuery(function(){
+        var App = require("index");
+        exports.app = new App({el: $("body")});
+      });
+    </script>
+
+    <style type="text/css">
+
+        body {
+            background: #fff;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-weight: 300;
+            color: #222;
+        }
+
+        a {
+            text-decoration: none;
+            color: #111;
+        }
+
+        h1 {
+            font-weight: normal;
+            font-size: 30px;
+        }
+
+        h1 small {
+            font-weight: 200;
+            font-size: 22px;
+            color: #333;
+        }
+
+        p {
+            color: #444;
+        }
+
+        .header:before,
+        .header:after {
+            display: table;
+            content: "";
+        }
+
+        .header:after {
+            clear: both;
+        }
+
+        .header .top-left {
+            float: left;
+        }
+
+        .header .top-right {
+            float: right;
+        }
+
+        .legend {
+            text-align: center;
+        }
+
+        .data {
+            color: #111;
+        }
+
+        .truth {
+            color: #f89406;
+        }
+
+        .fit {
+            color: #049cdb;
+        }
+
+        .btn {
+            font-size: 24px;
+            background-color: #333;
+            color: #eee;
+            padding: 3px 10px 5px;
+            min-width: 20px;
+            display: inline-block;
+            text-align: center;
+            margin: 0 5px;
+
+            -webkit-border-radius: 5px;
+               -moz-border-radius: 5px;
+                    border-radius: 5px;
+        }
+
+        .comp-btn {
+            font-weight: bold;
+        }
+
+        #order {
+            font-size: 20px;
+            font-weight: bold;
+            color: #111;
+        }
+
+        #container {
+            width: 800px;
+            margin: 0 auto;
+        }
+
+        #container circle {
+            fill: #222;
+            stroke: #222;
+            opacity: 1;
+        }
+
+        #container g {
+            stroke: #000;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div id="container">
+    <h1>
+        Curve Fitting
+        <small>| For Planet Hunters Data</small>
+    </h1>
+
+    <div class="options">
+
+        <div class="header">
+            <!-- <div class="top-left">
+                <a class="btn">New Dataset</a>
+                <a class="btn">Fit</a>
+            </div> -->
+            <div class="top-right">
+                Continuum complexity:
+                <a class="btn comp-btn less">-</a>
+                <span id="order">0</span>
+                <a class="btn comp-btn more">+</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="legend">
+    <span class="data">Data</span> |
+    <!-- <span class="truth">Truth</span> | -->
+    <span class="fit">Fit</span>
+</div>
+
+</body>
+</html>
